@@ -1,7 +1,6 @@
 const socket = io();
 let myAvatar = ""; 
 
-// 1. مكتبة الأصوات (تم إصلاح رابط click الفارغ)
 const sounds = {
     click: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3'),
     correct: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
@@ -14,7 +13,6 @@ const sounds = {
 
 let isMuted = false;
 
-// دالة تشغيل الصوت الذكية
 function playSound(name) {
     if (!isMuted && sounds[name]) {
         sounds[name].currentTime = 0;
@@ -22,7 +20,7 @@ function playSound(name) {
     }
 }
 
-// 2. شاشة الإقلاع (Boot Sequence)
+// Boot Sequence
 const bootText = ["INITIALIZING...", "CONNECTING TO SERVER...", "ACCESS GRANTED."];
 let lineIndex = 0;
 function runBoot() {
@@ -40,7 +38,6 @@ function runBoot() {
 }
 window.onload = runBoot;
 
-// 3. معاينة الصورة
 function previewImage() {
     const file = document.getElementById('file-upload').files[0];
     const reader = new FileReader();
@@ -51,44 +48,25 @@ function previewImage() {
     if (file) reader.readAsDataURL(file);
 }
 
-// 4. الدخول للعبة
 function joinGame() {
     const name = document.getElementById('player-input').value;
     if (name) {
         playSound('click');
         socket.emit('join_game', { name: name, avatar: myAvatar });
-        // إخفاء عناصر الدخول
         document.getElementById('file-upload').parentNode.style.display = 'none';
         document.getElementById('player-input').style.display = 'none';
         document.querySelector('button[onclick="joinGame()"]').style.display = 'none';
-        
-        // إظهار منطقة الانتظار
         document.getElementById('waiting-area').classList.remove('hidden');
-        
-        // تشغيل الموسيقى
         const bgMusic = document.getElementById('bg-music');
         if(bgMusic && !isMuted) bgMusic.play().catch(()=>{});
     }
 }
 
-// 5. زر الاستعداد
 function toggleReady() {
     playSound('click');
     socket.emit('toggle_ready');
-    const btn = document.getElementById('ready-btn');
-    // تغيير النص محلياً لسرعة الاستجابة (سيتم تحديثه من السيرفر أيضاً)
-    if(btn.innerText.includes("اضغط")) {
-        btn.innerText = "أنت جاهز"; 
-        btn.style.background = "#0f0"; 
-        btn.style.color = "black";
-    } else {
-        btn.innerText = "اضغط للاستعداد"; 
-        btn.style.background = "black"; 
-        btn.style.color = "white";
-    }
 }
 
-// 6. استخدام القدرات
 function useAbility(type) {
     playSound('click');
     socket.emit('use_ability', type);
@@ -100,20 +78,17 @@ function launchAttack() {
     document.getElementById('attack-btn').classList.add('hidden');
 }
 
-// =================== استقبال أحداث السيرفر ===================
+// --- SOCKET EVENTS ---
 
 socket.on('update_players', (players) => {
-    // أ) تحديث قائمة الانتظار (Lobby)
+    // Lobby Update
     const lobby = document.getElementById('lobby-list');
     if (lobby) {
         lobby.innerHTML = '';
         players.forEach(p => {
-            // استخدام الكلاسات للتنسيق المتساوي
             const statusClass = p.isReady ? 'status-ready' : 'status-wait';
             const statusText = p.isReady ? 'جاهز' : 'ينتظر';
-            
-            lobby.innerHTML += `
-            <li>
+            lobby.innerHTML += `<li>
                 <div style="display:flex; align-items:center;">
                     <img src="${p.avatar}" class="avatar-small">
                     <span style="margin-right:10px;">${p.name}</span>
@@ -122,8 +97,7 @@ socket.on('update_players', (players) => {
             </li>`;
         });
     }
-
-    // ب) تحديث قائمة النتائج الحية (Scoreboard)
+    // Scoreboard Update
     const scores = document.getElementById('live-scores');
     if (scores) {
         scores.innerHTML = '';
@@ -132,9 +106,7 @@ socket.on('update_players', (players) => {
             if(p.isFrozen) status = "❄️";
             if(p.hasShield) status += "🛡️";
             if(p.streak >= 3) status += "🔥";
-            
-            scores.innerHTML += `
-            <li>
+            scores.innerHTML += `<li>
                 <div style="display:flex; align-items:center;">
                     <img src="${p.avatar}" class="avatar-small"> ${p.name} ${status}
                 </div>
@@ -142,46 +114,63 @@ socket.on('update_players', (players) => {
             </li>`;
         });
     }
+    
+    // Update Ready Button Status locally
+    const myPlayer = players.find(p => p.id === socket.id);
+    const btn = document.getElementById('ready-btn');
+    if(myPlayer && btn) {
+        if(myPlayer.isReady) {
+            btn.innerText = "أنت جاهز"; btn.style.background = "#0f0"; btn.style.color = "black";
+        } else {
+            btn.innerText = "اضغط للاستعداد"; btn.style.background = "black"; btn.style.color = "white";
+        }
+    }
 });
 
 socket.on('lobby_timer_update', (t) => {
-    const timerElement = document.getElementById('lobby-timer');
-    if(timerElement) timerElement.innerText = t;
+    document.getElementById('lobby-timer').innerText = t;
 });
 
 socket.on('start_game', () => {
     document.getElementById('setup-screen').classList.add('hidden');
+    document.getElementById('winner-screen').classList.add('hidden'); // تأكيد إخفاء شاشة الفوز
     document.getElementById('game-screen').classList.remove('hidden');
 });
 
 socket.on('new_question', (q) => {
-    playSound('click'); // صوت خفيف عند ظهور السؤال
+    playSound('click');
     document.getElementById('question-text').innerText = q.q;
     document.getElementById('attack-btn').classList.add('hidden');
-    
     const div = document.getElementById('options-container');
     div.innerHTML = '';
-    
     q.options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
         btn.innerText = opt;
         btn.onclick = () => {
             socket.emit('submit_answer', i);
-            // تعطيل الأزرار لمنع الإجابة مرتين
             document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         };
         div.appendChild(btn);
     });
 });
 
-// تفعيل قدرة الهاك (إخفاء خيارين)
+socket.on('timer_update', (t) => {
+    // تحديث شريط الوقت
+    const percentage = (t/30)*100;
+    document.getElementById('timer-bar').style.width = percentage + "%";
+    
+    // تغيير اللون عند اقتراب انتهاء الوقت
+    const bar = document.getElementById('timer-bar');
+    if(t <= 5) bar.style.background = "red";
+    else bar.style.background = "#ff00c1";
+});
+
 socket.on('apply_hack', (indices) => {
     const btns = document.querySelectorAll('.option-btn');
     indices.forEach(i => { if(btns[i]) btns[i].style.visibility = 'hidden'; });
 });
 
-// تجميد اللاعب
 socket.on('you_are_frozen', () => {
     playSound('freeze');
     const overlay = document.getElementById('notification-overlay');
@@ -191,16 +180,13 @@ socket.on('you_are_frozen', () => {
     setTimeout(() => overlay.style.display = "none", 3000);
 });
 
-// الإشعارات العامة
 socket.on('announcement', (msg) => {
     const overlay = document.getElementById('notification-overlay');
     overlay.innerText = msg;
     overlay.style.display = "block";
-    
     if(msg.includes('سرق')) playSound('steal');
     if(msg.includes('تجميد')) playSound('freeze');
     if(msg.includes('درع')) playSound('click');
-    
     setTimeout(() => overlay.style.display = "none", 3000);
 });
 
@@ -216,29 +202,21 @@ socket.on('answer_result', (res) => {
     const txt = document.getElementById('question-text');
     if(res.correct) {
         playSound('correct');
-        txt.innerText = "CORRECT ACCESS"; 
-        txt.style.color = "#0f0";
+        txt.innerText = "CORRECT ACCESS"; txt.style.color = "#0f0";
         if(res.canAttack) document.getElementById('attack-btn').classList.remove('hidden');
     } else {
         playSound('wrong');
-        txt.innerText = "ACCESS DENIED"; 
-        txt.style.color = "red";
+        txt.innerText = "ACCESS DENIED"; txt.style.color = "red";
     }
     setTimeout(() => txt.style.color = "white", 1000);
-});
-
-socket.on('timer_update', (t) => {
-    document.getElementById('timer-bar').style.width = (t/30)*100 + "%";
 });
 
 socket.on('game_over', (players) => {
     playSound('win');
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('winner-screen').classList.remove('hidden');
-    
     players.sort((a,b) => b.score - a.score);
     const win = players[0];
-    
     document.getElementById('winner-info').innerHTML = `
         <img src="${win.avatar}" class="avatar-large">
         <h2>${win.name}</h2>
@@ -246,13 +224,29 @@ socket.on('game_over', (players) => {
     `;
 });
 
-// الخلفية المتحركة (Matrix Rain)
+// استقبال أمر العودة للوبي تلقائياً
+socket.on('return_to_lobby', () => {
+    playSound('click');
+    document.getElementById('winner-screen').classList.add('hidden');
+    document.getElementById('game-screen').classList.add('hidden');
+    document.getElementById('setup-screen').classList.remove('hidden');
+    document.getElementById('waiting-area').classList.remove('hidden');
+    
+    // تصفير الواجهة
+    const readyBtn = document.getElementById('ready-btn');
+    if(readyBtn) {
+        readyBtn.innerText = "اضغط للاستعداد";
+        readyBtn.style.background = "black";
+        readyBtn.style.color = "white";
+    }
+});
+
+// Matrix Background & Mute logic (كما هي)
 const canvas = document.getElementById('matrix-bg');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth; canvas.height = window.innerHeight;
 const cols = canvas.width / 20;
 const drops = Array(Math.floor(cols)).fill(1);
-
 setInterval(() => {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -265,17 +259,10 @@ setInterval(() => {
     });
 }, 50);
 
-// التحكم في كتم الصوت
 function toggleMute() {
     isMuted = !isMuted;
     const btn = document.getElementById('mute-btn');
     const m = document.getElementById('bg-music');
-    
-    if(isMuted) {
-        if(m) m.pause();
-        btn.innerText = "🔇";
-    } else {
-        if(m) m.play().catch(()=>{});
-        btn.innerText = "🔊";
-    }
+    if(isMuted) { if(m) m.pause(); btn.innerText = "🔇"; } 
+    else { if(m) m.play().catch(()=>{}); btn.innerText = "🔊"; }
 }

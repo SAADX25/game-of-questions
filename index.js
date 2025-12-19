@@ -5,8 +5,9 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-// --- إعدادات الوقت (عدل هنا فقط) ---
-const GAME_WAIT_TIME = 15; // وقت الانتظار بالثواني (مثلاً 15 ثانية)
+// --- إعدادات الوقت (تم التعديل هنا) ---
+const GAME_WAIT_TIME = 120; // دقيقتين (120 ثانية)
+const QUESTION_TIME = 30;   // وقت السؤال
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
@@ -14,7 +15,7 @@ app.use(express.static('public'));
 let players = {};
 let gameStarted = false;
 let currentQuestionIndex = 0;
-let timeLeft = 30;
+let timeLeft = QUESTION_TIME;
 let gameInterval;
 let lobbyTimeLeft = GAME_WAIT_TIME;
 let lobbyInterval;
@@ -33,7 +34,7 @@ const questions = [
 ];
 
 io.on('connection', (socket) => {
-    console.log(`New player connected: ${socket.id}`); // تنبيه في السيرفر
+    console.log(`New player connected: ${socket.id}`);
 
     socket.on('join_game', (data) => {
         players[socket.id] = {
@@ -44,12 +45,22 @@ io.on('connection', (socket) => {
             isFrozen: false, hasShield: false,
             abilities: { hack: true, freeze: true, steal: true, shield: true }
         };
+        
         io.emit('update_players', Object.values(players));
 
-        // إذا دخل أول لاعب ولم تبدأ اللعبة، ابدأ العد التنازلي
-        if (Object.keys(players).length === 1 && !gameStarted) {
-            console.log("First player joined! Starting lobby timer...");
-            startLobbyTimer();
+        if (gameStarted) {
+            // دخول متأخر للاعبين الجدد
+            socket.emit('start_game');
+            socket.emit('new_question', questions[currentQuestionIndex]);
+            socket.emit('timer_update', timeLeft);
+        } else {
+            // إذا كان أول لاعب، ابدأ العداد
+            if (Object.keys(players).length === 1) {
+                console.log("First player joined! Starting lobby timer...");
+                startLobbyTimer();
+            } else {
+                socket.emit('lobby_timer_update', lobbyTimeLeft);
+            }
         }
     });
 
@@ -57,6 +68,13 @@ io.on('connection', (socket) => {
         if (players[socket.id]) {
             players[socket.id].isReady = !players[socket.id].isReady;
             io.emit('update_players', Object.values(players));
+
+            // === الميزة الجديدة: التحقق إذا كان الجميع جاهزاً ===
+            const allPlayers = Object.values(players);
+            if (allPlayers.length > 0 && allPlayers.every(p => p.isReady)) {
+                console.log("All players are ready! Starting game immediately...");
+                startGameNow(); // ابدأ اللعبة فوراً دون انتظار المؤقت
+            }
         }
     });
 
@@ -121,10 +139,8 @@ io.on('connection', (socket) => {
         const activePlayers = Object.values(players).filter(p => !p.isFrozen);
         if (activePlayers.length > 0 && activePlayers.every(p => p.answered)) {
             clearInterval(gameInterval);
-            setTimeout(() => {
-                currentQuestionIndex++;
-                sendNewQuestion();
-            }, 1500);
+            currentQuestionIndex++;
+            sendNewQuestion();
         }
     });
 
@@ -137,67 +153,71 @@ io.on('connection', (socket) => {
         console.log(`Player disconnected: ${socket.id}`);
         delete players[socket.id];
         io.emit('update_players', Object.values(players));
+        
+        // التحقق من الجاهزية عند خروج لاعب (ربما يصبح الباقون كلهم جاهزين)
+        if (!gameStarted && Object.values(players).length > 0 && Object.values(players).every(p => p.isReady)) {
+             startGameNow();
+        }
+
         if (Object.keys(players).length === 0) {
-            console.log("No players left. Stopping lobby timer.");
+            console.log("No players left. Resetting.");
             stopLobbyTimer();
+            clearInterval(gameInterval);
             gameStarted = false;
         }
     });
 });
 
-// --- دوال التحكم بالوقت ---
+// --- Logic ---
 
 function startLobbyTimer() {
-    // إعادة ضبط الوقت للقيمة الثابتة
     lobbyTimeLeft = GAME_WAIT_TIME;
-    
-    // التأكد من إيقاف أي مؤقت سابق لمنع التداخل
     stopLobbyTimer();
-
-    console.log(`Lobby timer started for ${lobbyTimeLeft} seconds.`);
+    console.log(`Lobby started: ${lobbyTimeLeft}s`);
     
+    // تحديث فوري للوقت عند البدء
+    io.emit('lobby_timer_update', lobbyTimeLeft);
+
     lobbyInterval = setInterval(() => {
         lobbyTimeLeft--;
-        // إرسال الوقت لكل اللاعبين
         io.emit('lobby_timer_update', lobbyTimeLeft);
         
-        // طباعة الوقت في السيرفر للتأكد
-        if(lobbyTimeLeft % 5 === 0 || lobbyTimeLeft <= 5) {
-            console.log(`Lobby Timer: ${lobbyTimeLeft}`);
-        }
-
         if (lobbyTimeLeft <= 0) {
-            console.log("Time's up! Starting game automatically...");
             startGameNow();
         }
     }, 1000);
 }
 
 function stopLobbyTimer() {
-    if (lobbyInterval) {
-        clearInterval(lobbyInterval);
-        lobbyInterval = null;
-    }
+    if (lobbyInterval) clearInterval(lobbyInterval);
 }
 
 function startGameNow() {
+    if (gameStarted) return; // منع التشغيل المزدوج
     gameStarted = true;
-    stopLobbyTimer(); // إيقاف مؤقت الانتظار نهائياً
+    stopLobbyTimer();
     currentQuestionIndex = 0;
     io.emit('start_game');
-    console.log("Game Started!");
     sendNewQuestion();
 }
 
 function sendNewQuestion() {
-    if (currentQuestionIndex >= questions.length) { endGame(); return; }
+    if (currentQuestionIndex >= questions.length) { 
+        endGame(); 
+        return; 
+    }
     
-    Object.values(players).forEach(p => { p.answered = false; p.isFrozen = false; });
+    Object.values(players).forEach(p => { 
+        p.answered = false; 
+        p.isFrozen = false; 
+    });
     
-    timeLeft = 30;
+    timeLeft = QUESTION_TIME;
     io.emit('new_question', questions[currentQuestionIndex]);
+    io.emit('timer_update', timeLeft);
     
-    clearInterval(gameInterval);
+    if(gameInterval) clearInterval(gameInterval);
+    
     gameInterval = setInterval(() => {
         timeLeft--;
         io.emit('timer_update', timeLeft);
@@ -213,8 +233,31 @@ function endGame() {
     gameStarted = false;
     stopLobbyTimer();
     clearInterval(gameInterval);
+    
     io.emit('game_over', Object.values(players));
-    console.log("Game Over.");
+    console.log("Game Over. Restarting in 10s...");
+
+    setTimeout(() => {
+        console.log("Resetting game loop...");
+        Object.values(players).forEach(p => {
+            p.score = 0;
+            p.streak = 0;
+            p.isReady = false;
+            p.answered = false;
+            p.isFrozen = false;
+            p.hasShield = false;
+            p.abilities = { hack: true, freeze: true, steal: true, shield: true };
+        });
+
+        io.emit('update_players', Object.values(players));
+        io.emit('return_to_lobby');
+        currentQuestionIndex = 0;
+        
+        // إذا بقي لاعبون، ابدأ مؤقت الانتظار من جديد
+        if (Object.keys(players).length > 0) {
+            startLobbyTimer();
+        }
+    }, 10000);
 }
 
 server.listen(3000, () => { console.log('Server running on port 3000'); });
