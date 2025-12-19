@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber-Duel Online</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <audio id="bg-music" loop><source src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/no_curator/BoxCat_Games/Nameless_the_Hackers_RPG_Soundtrack/BoxCat_Games_-_10_-_Epic_Song.mp3" type="audio/mpeg"></audio>
+
+    <div id="boot-screen" style="position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:2000; padding:20px; text-align:left; color:#0f0;">
+        <div id="boot-text"></div>
+    </div>
+    <canvas id="matrix-bg"></canvas>
+    <div class="scanlines"></div>
+    
+    <div id="attack-overlay">⚠️ SYSTEM HACKED ⚠️</div>
+    <div id="notification-overlay"></div>
+
+    <button id="mute-btn" onclick="toggleMute()" style="position:fixed; top:10px; left:10px; z-index:1000; width:40px; border-radius:50%; background:black; border:1px solid #0f0; color:#0f0;">🔊</button>
+
+    <div id="setup-screen" class="hidden">
+        <h1 class="glitch">CYBER-DUEL</h1>
+        <div class="panel">
+            <h3>>> هوية العميل <<</h3>
+            <div style="text-align: center;">
+                <img id="avatar-preview" src="https://robohash.org/default?set=set1" 
+                     style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; border: 3px solid #0f0; display: block; margin: 0 auto 10px auto;">
+                <input type="file" id="file-upload" accept="image/*" onchange="previewImage()">
+                <label for="file-upload" class="custom-upload-btn">📸 اختر صورة</label>
+            </div>
+            <input type="text" id="player-input" placeholder="اسم العميل..." autocomplete="off">
+            <button onclick="joinGame()" style="width:100%;">DOCKING</button>
+            <div id="waiting-area" class="hidden" style="margin-top:20px;">
+                <div style="border:2px dashed #0f0; padding:10px; margin-bottom:10px;">
+                    <span style="font-size:0.8em;">العد التنازلي:</span>
+                    <h2 id="lobby-timer" style="color:red; margin:0;">10</h2>
+                </div>
+                <ul id="lobby-list" style="max-height:150px; overflow-y:auto;"></ul>
+                <button id="ready-btn" onclick="toggleReady()" style="width:100%; background:black; color:white; border:1px solid white;">اضغط للاستعداد</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden">
+        <div class="panel" style="width: 600px;">
+            <div style="width:100%; height:10px; background:#333; margin-bottom:10px;">
+                <div id="timer-bar" style="width:100%; height:100%; background:#ff00c1; transition:width 1s linear;"></div>
+            </div>
+            <div class="powerups-container">
+                <button id="btn-hack" onclick="useAbility('hack')" class="powerup-btn">✂️ HACK</button>
+                <button id="btn-freeze" onclick="useAbility('freeze')" class="powerup-btn">❄️ FREEZE</button>
+                <button id="btn-steal" onclick="useAbility('steal')" class="powerup-btn">💰 STEAL</button>
+                <button id="btn-shield" onclick="useAbility('shield')" class="powerup-btn">🛡️ SHIELD</button>
+            </div>
+            <button id="attack-btn" class="hidden" onclick="launchAttack()">☠️ ATTACK ☠️</button>
+            <div class="question-box"><h2 id="question-text">Loading...</h2></div>
+            <div id="options-container" class="options-grid"></div>
+            <div style="margin-top:20px; background:rgba(0,0,0,0.5); padding:10px; border:1px solid #333;">
+                <h3>📊 LIVE FEED</h3>
+                <ul id="live-scores"></ul>
+            </div>
+        </div>
+    </div>
+
+    <div id="winner-screen" class="hidden">
+        <div class="panel" style="border-color: gold;">
+            <h1 class="glitch" style="color: gold;">MISSION COMPLETE</h1>
+            <div id="winner-info"></div>
+            <button onclick="location.reload()">REBOOT</button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

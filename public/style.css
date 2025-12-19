@@ -1,0 +1,106 @@
+/* إعدادات أساسية */
+body {
+    background-color: #000; color: #0f0;
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;
+    overflow: hidden; user-select: none; cursor: crosshair;
+}
+
+/* الخلفيات */
+.scanlines {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 3px, 3px 100%; pointer-events: none; z-index: 10;
+}
+canvas#matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; opacity: 0.3; }
+
+.hidden { display: none !important; }
+
+/* اللوحة الرئيسية */
+.panel {
+    background: rgba(0, 20, 0, 0.95); border: 2px solid #0f0; padding: 30px; 
+    box-shadow: 0 0 30px #0f0; z-index: 20; max-width: 90%; width: 550px; border-radius: 10px; position: relative;
+}
+
+/* === الصور والرفع === */
+.avatar-small {
+    width: 40px; height: 40px; border-radius: 50%; object-fit: cover; 
+    border: 2px solid #0f0; margin-left: 10px; background: #000;
+}
+.avatar-large {
+    width: 120px; height: 120px; border-radius: 50%; object-fit: cover; 
+    border: 5px solid gold; margin-bottom: 15px; box-shadow: 0 0 20px gold; background: #000;
+}
+#avatar-preview {
+    display: block; margin: 0 auto 15px auto;
+    border-radius: 50%; object-fit: cover; border: 3px solid #0f0;
+    box-shadow: 0 0 15px #0f0; background: #000;
+}
+input[type="file"] { display: none; }
+.custom-upload-btn {
+    background: #000; color: #0f0; border: 2px solid #0f0; padding: 10px 20px; 
+    cursor: pointer; font-weight: bold; display: inline-block; transition: 0.3s; margin-bottom: 15px;
+}
+.custom-upload-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+
+/* === حالة الاستعداد (التنسيق الجديد) === */
+.status-badge {
+    display: inline-block; width: 80px; text-align: center; padding: 4px 0;
+    border-radius: 4px; font-size: 0.8em; font-weight: bold;
+}
+.status-ready { background: #0f0; color: black; box-shadow: 0 0 5px #0f0; }
+.status-wait { border: 1px dashed #555; color: #888; }
+
+/* أزرار القدرات */
+.powerups-container { display: flex; gap: 5px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
+.powerup-btn {
+    flex: 1; padding: 8px; font-size: 0.8em; font-weight: bold; cursor: pointer;
+    background: #000; color: white; border: 1px solid #555; transition: 0.2s; min-width: 80px;
+}
+.powerup-btn:hover:not(:disabled) { transform: scale(1.1); }
+.powerup-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+#btn-hack { border-color: #0f0; color: #0f0; }
+#btn-freeze { border-color: cyan; color: cyan; }
+#btn-steal { border-color: gold; color: gold; }
+#btn-shield { border-color: magenta; color: magenta; }
+
+/* زر الهجوم */
+#attack-btn {
+    background: red; color: white; border: 2px solid white; padding: 15px; width: 100%;
+    font-size: 1.2em; font-weight: bold; cursor: pointer; animation: blink 0.5s infinite;
+    margin-bottom: 15px; box-shadow: 0 0 15px red; text-transform: uppercase;
+}
+
+/* التنبيهات */
+#attack-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.95); color: red;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 3em; font-weight: bold; z-index: 9999;
+    text-shadow: 4px 4px white; display: none;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, #222 3px);
+}
+#notification-overlay {
+    position: fixed; top: 15%; left: 50%; transform: translateX(-50%);
+    background: rgba(0,0,0,0.9); border: 2px solid #fff; padding: 15px; 
+    z-index: 9000; color: #fff; font-size: 1.2em; border-radius: 5px; display: none; animation: slideDown 0.5s;
+}
+
+/* عناصر عامة */
+h1.glitch { text-shadow: 2px 2px #ff00c1; font-size: 2.5em; margin-bottom: 20px; }
+input[type="text"] { padding: 10px; border: 1px solid #0f0; background: black; color: #0f0; outline: none; width: 70%; text-align: center; margin-bottom: 10px;}
+button { cursor: pointer; padding: 10px; background: #0f0; border: none; font-weight: bold; margin-top: 10px; }
+.question-box { background: #111; border: 2px solid white; padding: 20px; margin: 20px 0; min-height: 80px; display: flex; align-items: center; justify-content: center; }
+.options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.option-btn { background: #222; border: 1px solid #555; padding: 15px; color: white; cursor: pointer; transition: 0.2s; width: 100%; }
+.option-btn:hover:not([disabled]) { background: #333; border-color: #0f0; }
+.correct { background-color: #0f0 !important; color: black !important; border-color: #0f0 !important; box-shadow: 0 0 35px #0f0; transform: scale(1.05); }
+.wrong { background-color: red !important; border-color: red !important; opacity: 0.8; }
+
+ul { list-style: none; padding: 0; width: 100%; }
+li { display: flex; align-items: center; justify-content: space-between; padding: 5px; border-bottom: 1px dashed #333; }
+
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes slideDown { from { top: -100px; } to { top: 15%; } }
