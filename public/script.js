@@ -3,25 +3,25 @@ let myAvatar = "";
 
 const sounds = {
     // 1. تم تصحيح المسار (أضفنا voices/)
-    click: new Audio('voices/click-play.mp3'),
+    click: new Audio('/voices/click-play.mp3'),
     
     // 2. استخدمنا ملف الفوز للإجابة الصحيحة مؤقتاً
-    correct: new Audio('voices/victory-play.mp3'),
+    correct: new Audio('/voices/victory-play.mp3'),
     
     // 3. الخطأ
     wrong: new Audio('voices/loss-play.mp3'),
     
     // 4. الفوز
-    win: new Audio('voices/victory-play.mp3'),
+    win: new Audio('/voices/victory-play.mp3'),
     
     // 5. تم تعبئة الإنذار بملف التحذير الموجود عندك
-    alarm: new Audio('voices/warning-play.mp3'),
+    alarm: new Audio('/voices/warning-play.mp3'),
     
     // 6. التجميد (كان صحيحاً لكن تأكد من المسار)
-    freeze: new Audio('voices/freezing-play.mp3'),
+    freeze: new Audio('/voices/freezing-play.mp3'),
     
     // 7. السرقة (استخدمنا ملف التحذير لأنه الأنسب حالياً)
-    steal: new Audio('voices/warning-play.mp3')
+    steal: new Audio('/voices/warning-play.mp3')
 };
 
 let isMuted = false;
