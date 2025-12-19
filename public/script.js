@@ -2,13 +2,26 @@ const socket = io();
 let myAvatar = ""; 
 
 const sounds = {
-    click: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-modern-technology-select-3124.mp3'),
-    correct: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3'),
-    wrong: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-wrong-answer-fail-notification-946.mp3'),
-    win: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3'),
-    alarm: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-security-facility-breach-alarm-994.mp3'),
-    freeze: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-ice-crack-deep-impact-2560.mp3'),
-    steal: new Audio('https://assets.mixkit.co/sfx/preview/mixkit-coins-sound-2003.mp3')
+    // 1. تم تصحيح المسار (أضفنا voices/)
+    click: new Audio('voices/click-play.mp3'),
+    
+    // 2. استخدمنا ملف الفوز للإجابة الصحيحة مؤقتاً
+    correct: new Audio('voices/victory-play.mp3'),
+    
+    // 3. الخطأ
+    wrong: new Audio('voices/loss-play.mp3'),
+    
+    // 4. الفوز
+    win: new Audio('voices/victory-play.mp3'),
+    
+    // 5. تم تعبئة الإنذار بملف التحذير الموجود عندك
+    alarm: new Audio('voices/warning-play.mp3'),
+    
+    // 6. التجميد (كان صحيحاً لكن تأكد من المسار)
+    freeze: new Audio('voices/freezing-play.mp3'),
+    
+    // 7. السرقة (استخدمنا ملف التحذير لأنه الأنسب حالياً)
+    steal: new Audio('voices/warning-play.mp3')
 };
 
 let isMuted = false;
