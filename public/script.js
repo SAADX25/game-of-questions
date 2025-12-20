@@ -20,7 +20,6 @@ function playSound(name) {
     }
 }
 
-// --- نظام الشات ---
 document.getElementById('chat-input').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         const text = this.value;
@@ -37,17 +36,15 @@ socket.on('receive_chat', (data) => {
     box.scrollTop = box.scrollHeight;
 });
 
-// --- اختصارات الكيبورد (Pro Controls) ---
 document.addEventListener('keydown', (e) => {
-    // الأرقام من 1 إلى 4 للإجابة
     if (['1', '2', '3', '4'].includes(e.key)) {
-        const index = parseInt(e.key) - 1;
-        const btns = document.querySelectorAll('.option-btn');
-        if (btns[index] && !btns[index].disabled) {
-            btns[index].click(); // محاكاة الضغط
+        const div = document.getElementById('options-container');
+        if (!div.classList.contains('options-hidden')) { 
+            const index = parseInt(e.key) - 1;
+            const btns = document.querySelectorAll('.option-btn');
+            if (btns[index] && !btns[index].disabled) btns[index].click();
         }
     }
-    // مسافة للاستعداد
     if (e.code === 'Space') {
         const readyBtn = document.getElementById('ready-btn');
         if (readyBtn && !readyBtn.classList.contains('hidden')) toggleReady();
@@ -62,15 +59,11 @@ function copyInviteLink() {
         const originalText = btn.innerText;
         btn.innerText = "✅ تم النسخ!";
         btn.style.background = "#0f0";
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.background = "#00e5ff";
-        }, 2000);
+        setTimeout(() => { btn.innerText = originalText; btn.style.background = "#00e5ff"; }, 2000);
     }).catch(err => console.error(err));
 }
 
-// Boot Sequence
-const bootText = ["INITIALIZING...", "CONNECTING TO SERVER...", "ACCESS GRANTED."];
+const bootText = ["INITIALIZING...", "CONNECTING...", "ACCESS GRANTED."];
 let lineIndex = 0;
 function runBoot() {
     if (lineIndex < bootText.length) {
@@ -106,27 +99,15 @@ function joinGame() {
         document.getElementById('player-input').style.display = 'none';
         document.querySelector('button[onclick="joinGame()"]').style.display = 'none';
         document.getElementById('waiting-area').classList.remove('hidden');
-        document.getElementById('chat-container').classList.remove('hidden'); // إظهار الشات
+        document.getElementById('chat-container').classList.remove('hidden');
         const bgMusic = document.getElementById('bg-music');
         if(bgMusic && !isMuted) bgMusic.play().catch(()=>{});
     }
 }
 
-function toggleReady() {
-    playSound('click');
-    socket.emit('toggle_ready');
-}
-
-function useAbility(type) {
-    playSound('click');
-    socket.emit('use_ability', type);
-}
-
-function launchAttack() {
-    playSound('click');
-    socket.emit('launch_attack');
-    document.getElementById('attack-btn').classList.add('hidden');
-}
+function toggleReady() { playSound('click'); socket.emit('toggle_ready'); }
+function useAbility(type) { playSound('click'); socket.emit('use_ability', type); }
+function launchAttack() { playSound('click'); socket.emit('launch_attack'); document.getElementById('attack-btn').classList.add('hidden'); }
 
 // --- SOCKET EVENTS ---
 
@@ -154,11 +135,17 @@ socket.on('update_players', (players) => {
             if(p.isFrozen) status = "❄️";
             if(p.hasShield) status += "🛡️";
             if(p.streak >= 3) status += "🔥";
+            if(p.isDead) status += "☠️";
+
+            // === إخفاء نقاط الأعداء (Blind Scoreboard) ===
+            let displayedScore = p.id === socket.id ? p.score : "???";
+            if (p.isDead) displayedScore = "DEAD";
+
             scores.innerHTML += `<li>
                 <div style="display:flex; align-items:center;">
                     <img src="${p.avatar}" class="avatar-small"> ${p.name} ${status}
                 </div>
-                <span style="color:${p.score > 0 ? 'yellow' : 'white'}">${p.score}</span>
+                <span style="color:${p.score > 0 ? 'yellow' : 'white'}">${displayedScore}</span>
             </li>`;
         });
     }
@@ -174,9 +161,7 @@ socket.on('update_players', (players) => {
     }
 });
 
-socket.on('lobby_timer_update', (t) => {
-    document.getElementById('lobby-timer').innerText = t;
-});
+socket.on('lobby_timer_update', (t) => { document.getElementById('lobby-timer').innerText = t; });
 
 socket.on('start_game', () => {
     document.getElementById('setup-screen').classList.add('hidden');
@@ -186,22 +171,64 @@ socket.on('start_game', () => {
 
 socket.on('new_question', (q) => {
     playSound('click');
-    document.getElementById('question-text').innerText = q.q;
+    const txt = document.getElementById('question-text');
+    txt.innerText = q.q;
+    txt.style.color = "white";
     document.getElementById('attack-btn').classList.add('hidden');
+
     const div = document.getElementById('options-container');
     div.innerHTML = '';
+    
+    div.classList.remove('options-visible');
+    div.classList.add('options-hidden');
+
     q.options.forEach((opt, i) => {
         const btn = document.createElement('button');
         btn.className = 'option-btn';
-        btn.innerText = opt;
         btn.onclick = () => {
             socket.emit('submit_answer', i);
             document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         };
-        // إضافة رقم للاختصار
         btn.innerHTML = `<span style="color:yellow; font-size:0.8em;">[${i+1}]</span> ${opt}`;
         div.appendChild(btn);
     });
+
+    setTimeout(() => {
+        div.classList.remove('options-hidden');
+        div.classList.add('options-visible');
+        playSound('click');
+    }, 4000);
+});
+
+// --- نظام القتل ---
+socket.on('grant_kill_ability', (enemies) => {
+    const modal = document.getElementById('kill-modal');
+    const container = document.getElementById('kill-list');
+    container.innerHTML = '';
+
+    if (enemies.length === 0) return; // لا يوجد أحد لقتله
+
+    playSound('alarm');
+    modal.style.display = 'block';
+
+    enemies.forEach(enemy => {
+        const btn = document.createElement('button');
+        btn.className = 'victim-btn';
+        btn.innerText = `EXECUTE ${enemy.name}`;
+        btn.onclick = () => {
+            socket.emit('execute_player', enemy.id);
+            modal.style.display = 'none';
+        };
+        container.appendChild(btn);
+    });
+});
+
+socket.on('you_died', (killerName) => {
+    document.getElementById('game-screen').classList.add('hidden');
+    const deathScreen = document.getElementById('death-screen');
+    deathScreen.style.display = 'flex';
+    document.getElementById('killer-name').innerText = `قتلك: ${killerName}`;
+    playSound('wrong');
 });
 
 socket.on('timer_update', (t) => {
@@ -210,7 +237,6 @@ socket.on('timer_update', (t) => {
     const bar = document.getElementById('timer-bar');
     const music = document.getElementById('bg-music');
     
-    // وضع الذعر: تسريع الموسيقى في آخر 5 ثواني
     if(t <= 5 && t > 0) {
         bar.style.background = "red";
         if(music) music.playbackRate = 1.5; 
@@ -241,6 +267,7 @@ socket.on('announcement', (msg) => {
     if(msg.includes('سرق')) playSound('steal');
     if(msg.includes('تجميد')) playSound('freeze');
     if(msg.includes('درع')) playSound('click');
+    if(msg.includes('إعدام')) playSound('wrong');
     setTimeout(() => overlay.style.display = "none", 3000);
 });
 
@@ -279,9 +306,12 @@ socket.on('answer_result', (res) => {
 
 socket.on('game_over', (players) => {
     playSound('win');
+    document.getElementById('death-screen').style.display = 'none'; // إخفاء شاشة الموت
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('winner-screen').classList.remove('hidden');
-    document.getElementById('chat-container').classList.add('hidden'); // إخفاء الشات عند النهاية
+    document.getElementById('chat-container').classList.add('hidden');
+    
+    // إظهار النتائج النهائية كاملة الآن (لكي يعرفوا ترتيبهم)
     players.sort((a,b) => b.score - a.score);
     const win = players[0];
     document.getElementById('winner-info').innerHTML = `
@@ -297,6 +327,7 @@ socket.on('return_to_lobby', () => {
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
     document.getElementById('waiting-area').classList.remove('hidden');
+    document.getElementById('death-screen').style.display = 'none';
     const readyBtn = document.getElementById('ready-btn');
     if(readyBtn) {
         readyBtn.innerText = "اضغط للاستعداد";

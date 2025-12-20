@@ -6,7 +6,6 @@ body {
     overflow: hidden; user-select: none; cursor: crosshair;
 }
 
-/* الخلفيات */
 .scanlines {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
@@ -17,26 +16,37 @@ canvas#matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
 
 .hidden { display: none !important; }
 
-/* === تصميم الشات === */
+/* === شاشة الموت === */
+#death-screen {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: black; z-index: 6000; display: none;
+    flex-direction: column; justify-content: center; align-items: center;
+}
+#death-msg { font-size: 4em; color: red; text-shadow: 0 0 20px red; margin-bottom: 20px; }
+#killer-name { font-size: 2em; color: white; }
+
+/* === نافذة اختيار الضحية === */
+#kill-modal {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: #111; border: 3px solid red; padding: 20px; z-index: 7000;
+    width: 300px; text-align: center; display: none; box-shadow: 0 0 50px red;
+}
+.victim-btn {
+    display: block; width: 100%; padding: 10px; margin: 5px 0;
+    background: #300; color: red; border: 1px solid red; cursor: pointer;
+}
+.victim-btn:hover { background: red; color: black; }
+
+/* الشات */
 #chat-container {
     position: fixed; bottom: 10px; right: 10px; width: 300px; height: 250px;
     background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; z-index: 5000;
     display: flex; flex-direction: column; padding: 5px; border-radius: 5px;
     box-shadow: 0 0 10px #0f0;
 }
-#chat-header {
-    background: #0f0; color: black; font-weight: bold; padding: 2px;
-    margin-bottom: 5px; font-size: 0.9em;
-}
-#chat-messages {
-    flex: 1; overflow-y: auto; font-size: 0.8em; text-align: right;
-    border-bottom: 1px solid #333; margin-bottom: 5px;
-    scrollbar-width: thin; scrollbar-color: #0f0 black;
-}
-#chat-input {
-    width: 100%; background: transparent; border: none; color: white;
-    font-family: monospace; outline: none; border-top: 1px dashed #333;
-}
+#chat-header { background: #0f0; color: black; font-weight: bold; padding: 2px; margin-bottom: 5px; font-size: 0.9em; }
+#chat-messages { flex: 1; overflow-y: auto; font-size: 0.8em; text-align: right; border-bottom: 1px solid #333; margin-bottom: 5px; }
+#chat-input { width: 100%; background: transparent; border: none; color: white; font-family: monospace; outline: none; border-top: 1px dashed #333; }
 .msg-line { margin: 3px 0; word-wrap: break-word; }
 .msg-user { color: #0f0; font-weight: bold; }
 .msg-text { color: white; }
@@ -46,47 +56,25 @@ canvas#matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
     background: rgba(0, 20, 0, 0.95); border: 2px solid #0f0; padding: 30px; 
     box-shadow: 0 0 30px #0f0; z-index: 20; max-width: 90%; width: 550px; border-radius: 10px; position: relative;
 }
+.options-hidden { opacity: 0; pointer-events: none; transform: translateY(20px); }
+.options-visible { opacity: 1; pointer-events: all; transform: translateY(0); transition: all 0.5s ease-out; }
 
-.avatar-small {
-    width: 40px; height: 40px; border-radius: 50%; object-fit: cover; 
-    border: 2px solid #0f0; margin-left: 10px; background: #000;
-}
-.avatar-large {
-    width: 120px; height: 120px; border-radius: 50%; object-fit: cover; 
-    border: 5px solid gold; margin-bottom: 15px; box-shadow: 0 0 20px gold; background: #000;
-}
-#avatar-preview {
-    display: block; margin: 0 auto 15px auto;
-    border-radius: 50%; object-fit: cover; border: 3px solid #0f0;
-    box-shadow: 0 0 15px #0f0; background: #000;
-}
+.avatar-small { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #0f0; margin-left: 10px; background: #000; }
+.avatar-large { width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 5px solid gold; margin-bottom: 15px; box-shadow: 0 0 20px gold; background: #000; }
+#avatar-preview { display: block; margin: 0 auto 15px auto; border-radius: 50%; object-fit: cover; border: 3px solid #0f0; box-shadow: 0 0 15px #0f0; background: #000; }
 input[type="file"] { display: none; }
-.custom-upload-btn {
-    background: #000; color: #0f0; border: 2px solid #0f0; padding: 10px 20px; 
-    cursor: pointer; font-weight: bold; display: inline-block; transition: 0.3s; margin-bottom: 15px;
-}
+.custom-upload-btn { background: #000; color: #0f0; border: 2px solid #0f0; padding: 10px 20px; cursor: pointer; font-weight: bold; display: inline-block; transition: 0.3s; margin-bottom: 15px; }
 .custom-upload-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
 
-.status-badge {
-    display: inline-block; width: 80px; text-align: center; padding: 4px 0;
-    border-radius: 4px; font-size: 0.8em; font-weight: bold;
-}
+.status-badge { display: inline-block; width: 80px; text-align: center; padding: 4px 0; border-radius: 4px; font-size: 0.8em; font-weight: bold; }
 .status-ready { background: #0f0; color: black; box-shadow: 0 0 5px #0f0; }
 .status-wait { border: 1px dashed #555; color: #888; }
 
-.invite-btn {
-    background: #00e5ff !important; color: black !important;
-    border: 2px solid white !important; margin-bottom: 15px;
-    padding: 10px; width: 100%; cursor: pointer; font-weight: bold;
-    box-shadow: 0 0 10px #00e5ff; transition: 0.3s;
-}
+.invite-btn { background: #00e5ff !important; color: black !important; border: 2px solid white !important; margin-bottom: 15px; padding: 10px; width: 100%; cursor: pointer; font-weight: bold; box-shadow: 0 0 10px #00e5ff; transition: 0.3s; }
 .invite-btn:hover { background: white !important; color: #00e5ff !important; transform: scale(1.05); }
 
 .powerups-container { display: flex; gap: 5px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
-.powerup-btn {
-    flex: 1; padding: 8px; font-size: 0.8em; font-weight: bold; cursor: pointer;
-    background: #000; color: white; border: 1px solid #555; transition: 0.2s; min-width: 80px;
-}
+.powerup-btn { flex: 1; padding: 8px; font-size: 0.8em; font-weight: bold; cursor: pointer; background: #000; color: white; border: 1px solid #555; transition: 0.2s; min-width: 80px; }
 .powerup-btn:hover:not(:disabled) { transform: scale(1.1); }
 .powerup-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 #btn-hack { border-color: #0f0; color: #0f0; }
@@ -94,40 +82,15 @@ input[type="file"] { display: none; }
 #btn-steal { border-color: gold; color: gold; }
 #btn-shield { border-color: magenta; color: magenta; }
 
-#attack-btn {
-    background: red; color: white; border: 2px solid white; padding: 15px; width: 100%;
-    font-size: 1.2em; font-weight: bold; cursor: pointer; animation: blink 0.5s infinite;
-    margin-bottom: 15px; box-shadow: 0 0 15px red; text-transform: uppercase;
-}
+#attack-btn { background: red; color: white; border: 2px solid white; padding: 15px; width: 100%; font-size: 1.2em; font-weight: bold; cursor: pointer; animation: blink 0.5s infinite; margin-bottom: 15px; box-shadow: 0 0 15px red; text-transform: uppercase; }
 
-@keyframes shake {
-  0% { transform: translate(1px, 1px) rotate(0deg); }
-  10% { transform: translate(-1px, -2px) rotate(-1deg); }
-  50% { transform: translate(-1px, 2px) rotate(-1deg); }
-  100% { transform: translate(1px, -2px) rotate(-1deg); }
-}
+@keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -2px); } 100% { transform: translate(1px, -1px); } }
 .shake-effect { animation: shake 0.5s; border: 2px solid red !important; }
-
-@keyframes pulse-green {
-    0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); }
-    70% { box-shadow: 0 0 0 20px rgba(0, 255, 0, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
-}
+@keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(0, 255, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); } }
 .correct-effect { animation: pulse-green 1s; }
 
-#attack-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0, 0, 0, 0.95); color: red;
-    display: flex; justify-content: center; align-items: center;
-    font-size: 3em; font-weight: bold; z-index: 9999;
-    text-shadow: 4px 4px white; display: none;
-    background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, #222 3px);
-}
-#notification-overlay {
-    position: fixed; top: 15%; left: 50%; transform: translateX(-50%);
-    background: rgba(0,0,0,0.9); border: 2px solid #fff; padding: 15px; 
-    z-index: 9000; color: #fff; font-size: 1.2em; border-radius: 5px; display: none; animation: slideDown 0.5s;
-}
+#attack-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); color: red; display: flex; justify-content: center; align-items: center; font-size: 3em; font-weight: bold; z-index: 9999; text-shadow: 4px 4px white; display: none; background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, #222 3px); }
+#notification-overlay { position: fixed; top: 15%; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.9); border: 2px solid #fff; padding: 15px; z-index: 9000; color: #fff; font-size: 1.2em; border-radius: 5px; display: none; animation: slideDown 0.5s; }
 
 h1.glitch { text-shadow: 2px 2px #ff00c1; font-size: 2.5em; margin-bottom: 20px; }
 input[type="text"] { padding: 10px; border: 1px solid #0f0; background: black; color: #0f0; outline: none; width: 70%; text-align: center; margin-bottom: 10px;}
@@ -138,9 +101,7 @@ button { cursor: pointer; padding: 10px; background: #0f0; border: none; font-we
 .option-btn:hover:not([disabled]) { background: #333; border-color: #0f0; }
 .correct { background-color: #0f0 !important; color: black !important; border-color: #0f0 !important; box-shadow: 0 0 35px #0f0; transform: scale(1.05); }
 .wrong { background-color: red !important; border-color: red !important; opacity: 0.8; }
-
 ul { list-style: none; padding: 0; width: 100%; }
 li { display: flex; align-items: center; justify-content: space-between; padding: 5px; border-bottom: 1px dashed #333; }
-
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes slideDown { from { top: -100px; } to { top: 15%; } }
