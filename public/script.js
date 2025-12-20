@@ -20,6 +20,7 @@ function playSound(name) {
     }
 }
 
+// الشات
 document.getElementById('chat-input').addEventListener('keypress', function (e) {
     if (e.key === 'Enter') {
         const text = this.value;
@@ -36,6 +37,7 @@ socket.on('receive_chat', (data) => {
     box.scrollTop = box.scrollHeight;
 });
 
+// اختصارات الكيبورد
 document.addEventListener('keydown', (e) => {
     if (['1', '2', '3', '4'].includes(e.key)) {
         const div = document.getElementById('options-container');
@@ -137,7 +139,6 @@ socket.on('update_players', (players) => {
             if(p.streak >= 3) status += "🔥";
             if(p.isDead) status += "☠️";
 
-            // === إخفاء نقاط الأعداء (Blind Scoreboard) ===
             let displayedScore = p.id === socket.id ? p.score : "???";
             if (p.isDead) displayedScore = "DEAD";
 
@@ -178,7 +179,6 @@ socket.on('new_question', (q) => {
 
     const div = document.getElementById('options-container');
     div.innerHTML = '';
-    
     div.classList.remove('options-visible');
     div.classList.add('options-hidden');
 
@@ -200,17 +200,13 @@ socket.on('new_question', (q) => {
     }, 4000);
 });
 
-// --- نظام القتل ---
 socket.on('grant_kill_ability', (enemies) => {
     const modal = document.getElementById('kill-modal');
     const container = document.getElementById('kill-list');
     container.innerHTML = '';
-
-    if (enemies.length === 0) return; // لا يوجد أحد لقتله
-
+    if (enemies.length === 0) return;
     playSound('alarm');
     modal.style.display = 'block';
-
     enemies.forEach(enemy => {
         const btn = document.createElement('button');
         btn.className = 'victim-btn';
@@ -224,11 +220,15 @@ socket.on('grant_kill_ability', (enemies) => {
 });
 
 socket.on('you_died', (killerName) => {
-    document.getElementById('game-screen').classList.add('hidden');
     const deathScreen = document.getElementById('death-screen');
     deathScreen.style.display = 'flex';
     document.getElementById('killer-name').innerText = `قتلك: ${killerName}`;
     playSound('wrong');
+    setTimeout(() => {
+        deathScreen.style.display = 'none';
+        document.body.classList.add('spectator-mode');
+        document.getElementById('kill-modal').style.display = 'none';
+    }, 3000);
 });
 
 socket.on('timer_update', (t) => {
@@ -236,7 +236,6 @@ socket.on('timer_update', (t) => {
     document.getElementById('timer-bar').style.width = percentage + "%";
     const bar = document.getElementById('timer-bar');
     const music = document.getElementById('bg-music');
-    
     if(t <= 5 && t > 0) {
         bar.style.background = "red";
         if(music) music.playbackRate = 1.5; 
@@ -286,7 +285,6 @@ socket.on('under_attack', (name) => {
 socket.on('answer_result', (res) => {
     const txt = document.getElementById('question-text');
     const panel = document.querySelector('.panel');
-    
     if(res.correct) {
         playSound('correct');
         txt.innerText = "ACCESS GRANTED"; 
@@ -306,12 +304,11 @@ socket.on('answer_result', (res) => {
 
 socket.on('game_over', (players) => {
     playSound('win');
-    document.getElementById('death-screen').style.display = 'none'; // إخفاء شاشة الموت
+    document.getElementById('death-screen').style.display = 'none';
+    document.body.classList.remove('spectator-mode');
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('winner-screen').classList.remove('hidden');
     document.getElementById('chat-container').classList.add('hidden');
-    
-    // إظهار النتائج النهائية كاملة الآن (لكي يعرفوا ترتيبهم)
     players.sort((a,b) => b.score - a.score);
     const win = players[0];
     document.getElementById('winner-info').innerHTML = `

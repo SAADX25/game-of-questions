@@ -5,8 +5,9 @@ const server = http.createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(server);
 
-const GAME_WAIT_TIME = 120;
-const QUESTION_TIME = 30;
+// --- إعدادات اللعبة ---
+const GAME_WAIT_TIME = 120; // وقت الانتظار في اللوبي
+const QUESTION_TIME = 30;   // وقت السؤال
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
@@ -20,6 +21,7 @@ let lobbyTimeLeft = GAME_WAIT_TIME;
 let lobbyInterval;
 let currentGameQuestions = [];
 
+// --- 🌐 بنك الأسئلة الشامل (مدمج) ---
 const allQuestions = [
     { q: "ما هي عاصمة اليابان؟", options: ["سول", "بكين", "طوكيو", "بانكوك"], answer: 2 },
     { q: "أطول نهر في العالم؟", options: ["النيل", "الأمازون", "الفرات", "المسيسيبي"], answer: 0 },
@@ -49,13 +51,12 @@ io.on('connection', (socket) => {
             name: data.name,
             avatar: data.avatar || `https://robohash.org/${data.name}?set=set1`,
             score: 0, streak: 0, answered: false, isReady: false,
-            isFrozen: false, hasShield: false, isDead: false, // خاصية الموت
+            isFrozen: false, hasShield: false, isDead: false,
             abilities: { hack: true, freeze: true, steal: true, shield: true }
         };
         io.emit('update_players', Object.values(players));
 
         if (gameStarted) {
-            // اللاعب الميت أو الجديد يدخل كمشاهد إذا بدأت اللعبة
             socket.emit('start_game');
             socket.emit('new_question', currentGameQuestions[currentQuestionIndex]);
             socket.emit('timer_update', timeLeft);
@@ -65,9 +66,10 @@ io.on('connection', (socket) => {
         }
     });
 
+    // الشات (مفتوح للجميع بمن فيهم الموتى)
     socket.on('send_chat', (msg) => {
         const player = players[socket.id];
-        if (player && !player.isDead) { // الموتى لا يتحدثون
+        if (player) {
             io.emit('receive_chat', { user: player.name, text: msg });
         }
     });
@@ -81,15 +83,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    // --- نظام الإعدام (Kill System) ---
+    // نظام الإعدام
     socket.on('execute_player', (targetId) => {
         const killer = players[socket.id];
         const victim = players[targetId];
 
         if (killer && victim && !victim.isDead && killer.streak >= 6) {
             victim.isDead = true;
-            victim.score = -9999; // تصفير نقاطه
-            killer.streak = 0; // تصفير الستريك بعد القتل
+            victim.score = -9999;
+            killer.streak = 0;
 
             io.to(targetId).emit('you_died', killer.name);
             io.emit('announcement', `☠️ تم إعدام ${victim.name} بواسطة ${killer.name}!`);
@@ -149,7 +151,6 @@ io.on('connection', (socket) => {
             player.score += 50 + speedBonus + (player.streak * 10);
             player.streak++;
 
-            // التحقق من القتل (6 إجابات صحيحة)
             if (player.streak === 6) {
                 socket.emit('grant_kill_ability', Object.values(players).filter(p => p.id !== player.id && !p.isDead));
             }
@@ -163,7 +164,6 @@ io.on('connection', (socket) => {
         io.emit('update_players', Object.values(players));
 
         const activePlayers = Object.values(players).filter(p => !p.isFrozen && !p.isDead);
-        // إذا لم يبق أحد حي أو الكل جاوب
         if (activePlayers.length > 0 && activePlayers.every(p => p.answered)) {
             clearInterval(gameInterval);
             currentQuestionIndex++;

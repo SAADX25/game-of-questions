@@ -64,10 +64,13 @@
     </div>
 
     <div id="game-screen" class="hidden">
-        <div class="panel" style="width: 600px;">
+        <div class="panel">
             <div style="width:100%; height:10px; background:#333; margin-bottom:10px;">
                 <div id="timer-bar" style="width:100%; height:100%; background:#ff00c1; transition:width 1s linear;"></div>
             </div>
+            
+            <div class="spectator-message hidden">👁️ أنت تشاهد الآن... انتظر الجولة القادمة</div>
+
             <div class="powerups-container">
                 <button id="btn-hack" onclick="useAbility('hack')" class="powerup-btn">✂️ HACK</button>
                 <button id="btn-freeze" onclick="useAbility('freeze')" class="powerup-btn">❄️ FREEZE</button>
