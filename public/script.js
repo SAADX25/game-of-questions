@@ -2,25 +2,12 @@ const socket = io();
 let myAvatar = ""; 
 
 const sounds = {
-    // 1. تم تصحيح المسار (أضفنا voices/)
     click: new Audio('/voices/click-play.mp3'),
-    
-    // 2. استخدمنا ملف الفوز للإجابة الصحيحة مؤقتاً
     correct: new Audio('/voices/victory-play.mp3'),
-    
-    // 3. الخطأ
-    wrong: new Audio('voices/loss-play.mp3'),
-    
-    // 4. الفوز
+    wrong: new Audio('/voices/loss-play.mp3'),
     win: new Audio('/voices/victory-play.mp3'),
-    
-    // 5. تم تعبئة الإنذار بملف التحذير الموجود عندك
     alarm: new Audio('/voices/warning-play.mp3'),
-    
-    // 6. التجميد (كان صحيحاً لكن تأكد من المسار)
     freeze: new Audio('/voices/freezing-play.mp3'),
-    
-    // 7. السرقة (استخدمنا ملف التحذير لأنه الأنسب حالياً)
     steal: new Audio('/voices/warning-play.mp3')
 };
 
@@ -31,6 +18,55 @@ function playSound(name) {
         sounds[name].currentTime = 0;
         sounds[name].play().catch(() => {});
     }
+}
+
+// --- نظام الشات ---
+document.getElementById('chat-input').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        const text = this.value;
+        if (text) {
+            socket.emit('send_chat', text);
+            this.value = '';
+        }
+    }
+});
+
+socket.on('receive_chat', (data) => {
+    const box = document.getElementById('chat-messages');
+    box.innerHTML += `<div class="msg-line"><span class="msg-user">${data.user}:</span> <span class="msg-text">${data.text}</span></div>`;
+    box.scrollTop = box.scrollHeight;
+});
+
+// --- اختصارات الكيبورد (Pro Controls) ---
+document.addEventListener('keydown', (e) => {
+    // الأرقام من 1 إلى 4 للإجابة
+    if (['1', '2', '3', '4'].includes(e.key)) {
+        const index = parseInt(e.key) - 1;
+        const btns = document.querySelectorAll('.option-btn');
+        if (btns[index] && !btns[index].disabled) {
+            btns[index].click(); // محاكاة الضغط
+        }
+    }
+    // مسافة للاستعداد
+    if (e.code === 'Space') {
+        const readyBtn = document.getElementById('ready-btn');
+        if (readyBtn && !readyBtn.classList.contains('hidden')) toggleReady();
+    }
+});
+
+function copyInviteLink() {
+    const link = window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+        playSound('click');
+        const btn = document.querySelector('.invite-btn');
+        const originalText = btn.innerText;
+        btn.innerText = "✅ تم النسخ!";
+        btn.style.background = "#0f0";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.background = "#00e5ff";
+        }, 2000);
+    }).catch(err => console.error(err));
 }
 
 // Boot Sequence
@@ -70,6 +106,7 @@ function joinGame() {
         document.getElementById('player-input').style.display = 'none';
         document.querySelector('button[onclick="joinGame()"]').style.display = 'none';
         document.getElementById('waiting-area').classList.remove('hidden');
+        document.getElementById('chat-container').classList.remove('hidden'); // إظهار الشات
         const bgMusic = document.getElementById('bg-music');
         if(bgMusic && !isMuted) bgMusic.play().catch(()=>{});
     }
@@ -94,7 +131,6 @@ function launchAttack() {
 // --- SOCKET EVENTS ---
 
 socket.on('update_players', (players) => {
-    // Lobby Update
     const lobby = document.getElementById('lobby-list');
     if (lobby) {
         lobby.innerHTML = '';
@@ -110,7 +146,6 @@ socket.on('update_players', (players) => {
             </li>`;
         });
     }
-    // Scoreboard Update
     const scores = document.getElementById('live-scores');
     if (scores) {
         scores.innerHTML = '';
@@ -128,7 +163,6 @@ socket.on('update_players', (players) => {
         });
     }
     
-    // Update Ready Button Status locally
     const myPlayer = players.find(p => p.id === socket.id);
     const btn = document.getElementById('ready-btn');
     if(myPlayer && btn) {
@@ -146,7 +180,7 @@ socket.on('lobby_timer_update', (t) => {
 
 socket.on('start_game', () => {
     document.getElementById('setup-screen').classList.add('hidden');
-    document.getElementById('winner-screen').classList.add('hidden'); // تأكيد إخفاء شاشة الفوز
+    document.getElementById('winner-screen').classList.add('hidden'); 
     document.getElementById('game-screen').classList.remove('hidden');
 });
 
@@ -164,19 +198,26 @@ socket.on('new_question', (q) => {
             socket.emit('submit_answer', i);
             document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
         };
+        // إضافة رقم للاختصار
+        btn.innerHTML = `<span style="color:yellow; font-size:0.8em;">[${i+1}]</span> ${opt}`;
         div.appendChild(btn);
     });
 });
 
 socket.on('timer_update', (t) => {
-    // تحديث شريط الوقت
     const percentage = (t/30)*100;
     document.getElementById('timer-bar').style.width = percentage + "%";
-    
-    // تغيير اللون عند اقتراب انتهاء الوقت
     const bar = document.getElementById('timer-bar');
-    if(t <= 5) bar.style.background = "red";
-    else bar.style.background = "#ff00c1";
+    const music = document.getElementById('bg-music');
+    
+    // وضع الذعر: تسريع الموسيقى في آخر 5 ثواني
+    if(t <= 5 && t > 0) {
+        bar.style.background = "red";
+        if(music) music.playbackRate = 1.5; 
+    } else {
+        bar.style.background = "#ff00c1";
+        if(music) music.playbackRate = 1.0; 
+    }
 });
 
 socket.on('apply_hack', (indices) => {
@@ -205,21 +246,33 @@ socket.on('announcement', (msg) => {
 
 socket.on('under_attack', (name) => {
     playSound('alarm');
+    document.body.classList.add('shake-effect');
     const ov = document.getElementById('attack-overlay');
-    ov.innerText = `⚠️ HACKED BY ${name} ⚠️`;
+    ov.innerText = `⚠️ SYSTEM BREACH BY ${name} ⚠️`;
     ov.style.display = "flex";
-    setTimeout(() => { ov.style.display = "none"; }, 3000);
+    setTimeout(() => { 
+        ov.style.display = "none"; 
+        document.body.classList.remove('shake-effect');
+    }, 3000);
 });
 
 socket.on('answer_result', (res) => {
     const txt = document.getElementById('question-text');
+    const panel = document.querySelector('.panel');
+    
     if(res.correct) {
         playSound('correct');
-        txt.innerText = "CORRECT ACCESS"; txt.style.color = "#0f0";
+        txt.innerText = "ACCESS GRANTED"; 
+        txt.style.color = "#0f0";
+        panel.classList.add('correct-effect');
+        setTimeout(() => panel.classList.remove('correct-effect'), 1000);
         if(res.canAttack) document.getElementById('attack-btn').classList.remove('hidden');
     } else {
         playSound('wrong');
-        txt.innerText = "ACCESS DENIED"; txt.style.color = "red";
+        txt.innerText = "ACCESS DENIED"; 
+        txt.style.color = "red";
+        document.body.classList.add('shake-effect');
+        setTimeout(() => document.body.classList.remove('shake-effect'), 500);
     }
     setTimeout(() => txt.style.color = "white", 1000);
 });
@@ -228,6 +281,7 @@ socket.on('game_over', (players) => {
     playSound('win');
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('winner-screen').classList.remove('hidden');
+    document.getElementById('chat-container').classList.add('hidden'); // إخفاء الشات عند النهاية
     players.sort((a,b) => b.score - a.score);
     const win = players[0];
     document.getElementById('winner-info').innerHTML = `
@@ -237,15 +291,12 @@ socket.on('game_over', (players) => {
     `;
 });
 
-// استقبال أمر العودة للوبي تلقائياً
 socket.on('return_to_lobby', () => {
     playSound('click');
     document.getElementById('winner-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.add('hidden');
     document.getElementById('setup-screen').classList.remove('hidden');
     document.getElementById('waiting-area').classList.remove('hidden');
-    
-    // تصفير الواجهة
     const readyBtn = document.getElementById('ready-btn');
     if(readyBtn) {
         readyBtn.innerText = "اضغط للاستعداد";
@@ -254,7 +305,6 @@ socket.on('return_to_lobby', () => {
     }
 });
 
-// Matrix Background & Mute logic (كما هي)
 const canvas = document.getElementById('matrix-bg');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth; canvas.height = window.innerHeight;

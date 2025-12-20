@@ -17,13 +17,36 @@ canvas#matrix-bg { position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
 
 .hidden { display: none !important; }
 
+/* === تصميم الشات === */
+#chat-container {
+    position: fixed; bottom: 10px; right: 10px; width: 300px; height: 250px;
+    background: rgba(0, 0, 0, 0.9); border: 1px solid #0f0; z-index: 5000;
+    display: flex; flex-direction: column; padding: 5px; border-radius: 5px;
+    box-shadow: 0 0 10px #0f0;
+}
+#chat-header {
+    background: #0f0; color: black; font-weight: bold; padding: 2px;
+    margin-bottom: 5px; font-size: 0.9em;
+}
+#chat-messages {
+    flex: 1; overflow-y: auto; font-size: 0.8em; text-align: right;
+    border-bottom: 1px solid #333; margin-bottom: 5px;
+    scrollbar-width: thin; scrollbar-color: #0f0 black;
+}
+#chat-input {
+    width: 100%; background: transparent; border: none; color: white;
+    font-family: monospace; outline: none; border-top: 1px dashed #333;
+}
+.msg-line { margin: 3px 0; word-wrap: break-word; }
+.msg-user { color: #0f0; font-weight: bold; }
+.msg-text { color: white; }
+
 /* اللوحة الرئيسية */
 .panel {
     background: rgba(0, 20, 0, 0.95); border: 2px solid #0f0; padding: 30px; 
     box-shadow: 0 0 30px #0f0; z-index: 20; max-width: 90%; width: 550px; border-radius: 10px; position: relative;
 }
 
-/* === الصور والرفع === */
 .avatar-small {
     width: 40px; height: 40px; border-radius: 50%; object-fit: cover; 
     border: 2px solid #0f0; margin-left: 10px; background: #000;
@@ -44,7 +67,6 @@ input[type="file"] { display: none; }
 }
 .custom-upload-btn:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
 
-/* === حالة الاستعداد (التنسيق الجديد) === */
 .status-badge {
     display: inline-block; width: 80px; text-align: center; padding: 4px 0;
     border-radius: 4px; font-size: 0.8em; font-weight: bold;
@@ -52,7 +74,14 @@ input[type="file"] { display: none; }
 .status-ready { background: #0f0; color: black; box-shadow: 0 0 5px #0f0; }
 .status-wait { border: 1px dashed #555; color: #888; }
 
-/* أزرار القدرات */
+.invite-btn {
+    background: #00e5ff !important; color: black !important;
+    border: 2px solid white !important; margin-bottom: 15px;
+    padding: 10px; width: 100%; cursor: pointer; font-weight: bold;
+    box-shadow: 0 0 10px #00e5ff; transition: 0.3s;
+}
+.invite-btn:hover { background: white !important; color: #00e5ff !important; transform: scale(1.05); }
+
 .powerups-container { display: flex; gap: 5px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
 .powerup-btn {
     flex: 1; padding: 8px; font-size: 0.8em; font-weight: bold; cursor: pointer;
@@ -60,20 +89,32 @@ input[type="file"] { display: none; }
 }
 .powerup-btn:hover:not(:disabled) { transform: scale(1.1); }
 .powerup-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-
 #btn-hack { border-color: #0f0; color: #0f0; }
 #btn-freeze { border-color: cyan; color: cyan; }
 #btn-steal { border-color: gold; color: gold; }
 #btn-shield { border-color: magenta; color: magenta; }
 
-/* زر الهجوم */
 #attack-btn {
     background: red; color: white; border: 2px solid white; padding: 15px; width: 100%;
     font-size: 1.2em; font-weight: bold; cursor: pointer; animation: blink 0.5s infinite;
     margin-bottom: 15px; box-shadow: 0 0 15px red; text-transform: uppercase;
 }
 
-/* التنبيهات */
+@keyframes shake {
+  0% { transform: translate(1px, 1px) rotate(0deg); }
+  10% { transform: translate(-1px, -2px) rotate(-1deg); }
+  50% { transform: translate(-1px, 2px) rotate(-1deg); }
+  100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+.shake-effect { animation: shake 0.5s; border: 2px solid red !important; }
+
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0.7); }
+    70% { box-shadow: 0 0 0 20px rgba(0, 255, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(0, 255, 0, 0); }
+}
+.correct-effect { animation: pulse-green 1s; }
+
 #attack-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0, 0, 0, 0.95); color: red;
@@ -88,7 +129,6 @@ input[type="file"] { display: none; }
     z-index: 9000; color: #fff; font-size: 1.2em; border-radius: 5px; display: none; animation: slideDown 0.5s;
 }
 
-/* عناصر عامة */
 h1.glitch { text-shadow: 2px 2px #ff00c1; font-size: 2.5em; margin-bottom: 20px; }
 input[type="text"] { padding: 10px; border: 1px solid #0f0; background: black; color: #0f0; outline: none; width: 70%; text-align: center; margin-bottom: 10px;}
 button { cursor: pointer; padding: 10px; background: #0f0; border: none; font-weight: bold; margin-top: 10px; }

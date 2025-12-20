@@ -21,6 +21,12 @@
 
     <button id="mute-btn" onclick="toggleMute()" style="position:fixed; top:10px; left:10px; z-index:1000; width:40px; border-radius:50%; background:black; border:1px solid #0f0; color:#0f0;">🔊</button>
 
+    <div id="chat-container" class="hidden">
+        <div id="chat-header">💬 Hacker Chat</div>
+        <div id="chat-messages"></div>
+        <input type="text" id="chat-input" placeholder="أرسل رسالة..." autocomplete="off">
+    </div>
+
     <div id="setup-screen" class="hidden">
         <h1 class="glitch">CYBER-DUEL</h1>
         <div class="panel">
@@ -36,8 +42,10 @@
             <div id="waiting-area" class="hidden" style="margin-top:20px;">
                 <div style="border:2px dashed #0f0; padding:10px; margin-bottom:10px;">
                     <span style="font-size:0.8em;">العد التنازلي:</span>
-                    <h2 id="lobby-timer" style="color:red; margin:0;">10</h2>
+                    <h2 id="lobby-timer" style="color:red; margin:0;">120</h2>
                 </div>
+                <button onclick="copyInviteLink()" class="invite-btn">🔗 نسخ رابط الدعوة</button>
+                <br>
                 <ul id="lobby-list" style="max-height:150px; overflow-y:auto;"></ul>
                 <button id="ready-btn" onclick="toggleReady()" style="width:100%; background:black; color:white; border:1px solid white;">اضغط للاستعداد</button>
             </div>
