@@ -144,7 +144,7 @@ socket.on('update_players', (players) => {
 
             scores.innerHTML += `<li>
                 <div style="display:flex; align-items:center;">
-                    <img src="${p.avatar}" class="avatar-small"> ${p.name} ${status}
+                    <img src="${p.avatar}" class="avatar-small"> [Lv.${p.level || 1}] ${p.name} ${status}
                 </div>
                 <span style="color:${p.score > 0 ? 'yellow' : 'white'}">${displayedScore}</span>
             </li>`;

@@ -50,7 +50,7 @@ io.on('connection', (socket) => {
             id: socket.id,
             name: data.name,
             avatar: data.avatar || `https://robohash.org/${data.name}?set=set1`,
-            score: 0, streak: 0, answered: false, isReady: false,
+            score: 0, xp: 0, level: 1, streak: 0, answered: false, isReady: false,
             isFrozen: false, hasShield: false, isDead: false,
             abilities: { hack: true, freeze: true, steal: true, shield: true }
         };
@@ -148,7 +148,10 @@ io.on('connection', (socket) => {
 
         if (answerIndex === correct) {
             const speedBonus = Math.floor(timeLeft * 3);
-            player.score += 50 + speedBonus + (player.streak * 10);
+            const points = 50 + speedBonus + (player.streak * 10);
+            player.score += points;
+            player.xp += points;
+            player.level = Math.floor(player.xp / 500) + 1;
             player.streak++;
 
             if (player.streak === 6) {
